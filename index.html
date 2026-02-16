@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="frame-ancestors *;">
+<title>Web3 War Room</title>
+
+<style>
+
+/* ===== CYBERPUNK THEME ===== */
+
+body{
+margin:0;
+font-family:Arial, sans-serif;
+background:#020617;
+color:#00f7ff;
+}
+
+.container{
+max-width:900px;
+margin:auto;
+padding:20px;
+}
+
+/* neon animation */
+
+.title{
+text-align:center;
+font-size:28px;
+margin-bottom:20px;
+animation:glow 2s infinite alternate;
+}
+
+@keyframes glow{
+from{text-shadow:0 0 5px #00f7ff}
+to{text-shadow:0 0 20px #00f7ff}
+}
+
+/* grid layout */
+
+.grid{
+display:grid;
+grid-template-columns:1fr 1fr;
+gap:15px;
+}
+
+.panel{
+background:#0f172a;
+padding:15px;
+border-radius:12px;
+box-shadow:0 0 20px rgba(0,255,255,0.15);
+}
+
+/* portfolio */
+
+.row{
+display:flex;
+justify-content:space-between;
+margin:6px 0;
+}
+
+.green{color:#00ff9f}
+.red{color:#ff4d6d}
+
+/* progress bar */
+
+.bar{
+height:18px;
+background:#020617;
+border-radius:10px;
+overflow:hidden;
+}
+
+.fill{
+height:100%;
+background:linear-gradient(90deg,#00f7ff,#0066ff);
+width:0%;
+transition:1s;
+}
+
+/* checklist */
+
+.task{
+display:flex;
+justify-content:space-between;
+margin:5px 0;
+}
+
+button{
+background:#00f7ff;
+border:none;
+padding:4px 8px;
+cursor:pointer;
+}
+
+/* price ticker */
+
+.ticker{
+display:grid;
+grid-template-columns:repeat(3,1fr);
+gap:6px;
+text-align:center;
+}
+
+.small{font-size:12px;opacity:0.7}
+
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<div class="title">⚡ WEB3 WAR ROOM</div>
+
+<div class="grid">
+
+<!-- ===== MARKET TERMINAL ===== -->
+<div class="panel">
+<h3>Market Terminal</h3>
+<div id="prices" class="ticker"></div>
+</div>
+
+<!-- ===== PORTFOLIO ===== -->
+<div class="panel">
+<h3>Portfolio</h3>
+<div id="portfolio"></div>
+</div>
+
+<!-- ===== META FINANCEIRA ===== -->
+<div class="panel">
+<h3>Meta $1000</h3>
+<div class="bar"><div id="goalBar" class="fill"></div></div>
+<div id="goalText"></div>
+</div>
+
+<!-- ===== ROTINA WEB3 ===== -->
+<div class="panel">
+<h3>Daily Operations</h3>
+
+<div class="task">Gods Unchained Wins <button onclick="toggle(this)">Done</button></div>
+<div class="task">Sunflower Land Farm <button onclick="toggle(this)">Done</button></div>
+<div class="task">Chainers Daily <button onclick="toggle(this)">Done</button></div>
+<div class="task">Faucets Target $0.50 <button onclick="toggle(this)">Done</button></div>
+<div class="task">Check DeFi Pools <button onclick="toggle(this)">Done</button></div>
+
+</div>
+
+<!-- ===== PRIORIDADE PROJETOS ===== -->
+<div class="panel">
+<h3>Project Priority</h3>
+<div>🔴 Tier A → Gods Unchained / DeFi</div>
+<div>🟡 Tier B → Sunflower Land</div>
+<div>🟢 Tier C → Rollercoin / Faucets</div>
+</div>
+
+<!-- ===== LOG ===== -->
+<div class="panel">
+<h3>System Log</h3>
+<div id="log" class="small"></div>
+</div>
+
+</div>
+
+</div>
+
+<script>
+
+/* ===== CONFIGURAÇÃO ===== */
+
+const holdings={
+bitcoin:{symbol:"BTC",amount:0.01,cost:45000},
+ethereum:{symbol:"ETH",amount:0.3,cost:2200},
+"gods-unchained":{symbol:"GODS",amount:200,cost:0.25},
+ronin:{symbol:"RON",amount:100,cost:1.8},
+"immutable-x":{symbol:"IMX",amount:50,cost:1.2},
+solana:{symbol:"SOL",amount:2,cost:90}
+}
+
+const GOAL=1000
+
+/* ===== FUNÇÕES ===== */
+
+function log(msg){
+document.getElementById("log").innerText=
+new Date().toLocaleTimeString()+" → "+msg
+}
+
+function toggle(btn){
+btn.innerText="✓"
+btn.style.background="#00ff9f"
+}
+
+/* ===== UPDATE ===== */
+
+async function update(){
+
+try{
+
+const ids=Object.keys(holdings).join(",")
+
+const res=await fetch(
+`https://api.coingecko.com/api/v3/simple/price?ids=${ids}&vs_currencies=usd`,
+{cache:"no-store"}
+)
+
+const data=await res.json()
+
+/* prices */
+
+const priceBox=document.getElementById("prices")
+priceBox.innerHTML=""
+
+/* portfolio */
+
+const portfolioBox=document.getElementById("portfolio")
+portfolioBox.innerHTML=""
+
+let total=0
+
+for(const coin in holdings){
+
+const price=data[coin]?.usd||0
+const h=holdings[coin]
+const value=price*h.amount
+const pnl=value-(h.cost*h.amount)
+
+total+=value
+
+priceBox.innerHTML+=`
+<div>${h.symbol}<br>$${price.toFixed(2)}</div>
+`
+
+portfolioBox.innerHTML+=`
+<div class="row">
+<span>${h.symbol}</span>
+<span>$${value.toFixed(2)}</span>
+<span class="${pnl>=0?"green":"red"}">
+${pnl>=0?"+":""}$${pnl.toFixed(2)}
+</span>
+</div>
+`
+}
+
+/* goal */
+
+const progress=Math.min((total/GOAL)*100,100)
+document.getElementById("goalBar").style.width=progress+"%"
+document.getElementById("goalText").innerText=
+`$${total.toFixed(2)} / $${GOAL} (${progress.toFixed(1)}%)`
+
+log("Market synced")
+
+}catch(e){
+log("API error")
+}
+
+}
+
+window.onload=()=>{
+update()
+setInterval(update,60000)
+}
+
+</script>
+
+</body>
+</html>
